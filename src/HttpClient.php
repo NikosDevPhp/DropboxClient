@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DropboxClient;
 
 
@@ -11,11 +13,6 @@ class HttpClient
     private $handler;
 
     /**
-     * @var string Url to be used
-     */
-    private $url;
-
-    /**
      * @var array Headers for the request
      */
     private $headers;
@@ -25,6 +22,15 @@ class HttpClient
      */
     private $options;
 
+    /**
+     * @var string The headers of the Response
+     */
+    private $responseHeaders;
+
+    /**
+     * @var string The body of the Response
+     */
+    private $responseBody;
     /**
      * HttpClient constructor.
      */
@@ -38,47 +44,66 @@ class HttpClient
     }
 
     /**
-     * get method
-     * @param $client resource
-     * @return $client resource
+     * GET method configuration
+     * @param string $url The url to GET
+     * @return \DropboxClient\HttpClient An instance to allow chain calling of methods
      */
-    public function get(string $url)
+    public function get(string $url): HttpClient
     {
         curl_setopt($this->handler, CURLOPT_URL, $url);
         return $this;
     }
 
-    public function post(string $url, array $data)
+    public function post(string $url, array $data): HttpClient
     {
+        curl_setopt($this->handler, CURLOPT_POST, 1);
         curl_setopt($this->handler, CURLOPT_POSTFIELDS, $data);
+        return $this;
     }
 
     /**
-     * @return array
+     * Executes the HttpClient Request after applying all custom options
+     * @return \DropboxClient\HttpClient An instance to allow chain calling of methods
      */
-    public function execute()
+    public function execute(): HttpClient
     {
-
         $this->setDefaultOptions();
         $this->setCustomOptions();
         $response = curl_exec($this->handler);
+        if (curl_errno($this->handler)) {
+            $errors = curl_error($this->handler);
+        }
 
+
+        if (isset($errors)) {
+            throw new Exception('Curl Error');
+        }
         $headersLength = curl_getinfo($this->handler, CURLINFO_HEADER_SIZE);
-        $headers = substr($response, 0, $headersLength);
-        $body = substr($response, $headersLength);
+        $this->responseHeaders = substr($response, 0, $headersLength);
+        $this->responseBody = substr($response, $headersLength);
 
-        return [
-            'headers' => $headers,
-            'body' => $body
-        ];
+        curl_close($this->handler);
+        return $this;
     }
 
-    public function setOptions()
+    /**
+     * @return string The Response Headers
+     */
+    public function getHeaders(): string
     {
-
+        return $this->responseHeaders;
     }
 
-    private function setDefaultOptions()
+    /**
+     * @return string The Response Body
+     */
+    public function getBody(): string
+    {
+        return $this->responseBody;
+    }
+
+
+    private function setDefaultOptions(): void
     {
         curl_setopt($this->handler, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($this->handler, CURLOPT_RETURNTRANSFER , 1);
@@ -86,12 +111,16 @@ class HttpClient
 
     }
 
-    public function withOptions(array $options)
+    /**
+     * @param array $options Set custom cURL Options
+     * @return HttpClient
+     */
+    public function withOptions(array $options): HttpClient
     {
         curl_setopt_array($this->handler, $options);
     }
 
-    public function withHeaders($headers)
+    public function withHeaders(array $headers): HttpClient
     {
         curl_setopt($this->handler, CURLOPT_HTTPHEADER, $headers);
     }

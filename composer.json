@@ -1,0 +1,20 @@
+{
+  "name": "nikosdevphp/dropboxclient",
+  "description": "A basic Dropbox v2 php client",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Nikos Triantafyllou",
+      "email": "niktriant89@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.0.0",
+    "ext-curl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "DropboxClient\\": "src/"
+    }
+  }
+}

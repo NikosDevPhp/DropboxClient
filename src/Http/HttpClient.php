@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace DropboxClient;
+namespace DropboxClient\Http;
 
 
-class HttpClient
+class HttpClient implements HttpClientInterface
 {
     /**
      * @var resource cUrl Resource used as the request
@@ -54,33 +54,40 @@ class HttpClient
         return $this;
     }
 
-    public function post(string $url, array $data): HttpClient
+    public function post(string $url, array $data = []): HttpClient
     {
+        curl_setopt($this->handler, CURLOPT_URL, $url);
         curl_setopt($this->handler, CURLOPT_POST, 1);
-        curl_setopt($this->handler, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($this->handler, CURLOPT_POSTFIELDS, empty($data) ? '' : json_encode($data));
         return $this;
     }
 
     /**
      * Executes the HttpClient Request after applying all custom options
      * @return \DropboxClient\HttpClient An instance to allow chain calling of methods
+     * @throws \Exception
      */
     public function execute(): HttpClient
     {
         $this->setDefaultOptions();
         $this->setCustomOptions();
         $response = curl_exec($this->handler);
+
         if (curl_errno($this->handler)) {
             $errors = curl_error($this->handler);
         }
 
-
         if (isset($errors)) {
-            throw new Exception('Curl Error');
+            throw new \Exception('Curl Error');
         }
+
+
         $headersLength = curl_getinfo($this->handler, CURLINFO_HEADER_SIZE);
         $this->responseHeaders = substr($response, 0, $headersLength);
+//        var_dump($this->responseHeaders);
+        echo 'test' .PHP_EOL;
         $this->responseBody = substr($response, $headersLength);
+//        var_dump($this->responseBody);
 
         curl_close($this->handler);
         return $this;
@@ -120,9 +127,10 @@ class HttpClient
         curl_setopt_array($this->handler, $options);
     }
 
-    public function withHeaders(array $headers): HttpClient
+    public function withHeaders(array $headers = []): HttpClient
     {
         curl_setopt($this->handler, CURLOPT_HTTPHEADER, $headers);
+        return $this;
     }
 
     private function setCustomOptions()

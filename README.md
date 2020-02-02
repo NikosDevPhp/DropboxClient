@@ -1,7 +1,7 @@
 # DropboxClient
 A basic Dropbox Client in PHP
 
-## Install
+## Installation
 Via Composer
 
 ```bash
@@ -25,5 +25,14 @@ for building customized requests
 You can initialiaze a Dropbox API call:
 
 ```bash
-
+$client = new DropboxClient\DropboxClient({access_token});
 ```
+and then call the corresponding method like:
+```bash
+$client->createFolder('/Homework');
+$client->downloadFile('/app.ico');
+$client->listFolder('/Homework');
+```
+
+Tested on actual created Dropbox Developer Account and worked
+as of 02/02/2020

@@ -5,10 +5,9 @@ declare(strict_types=1);
 
 namespace DropboxClient;
 
-use DropboxClient\Http\HttpClientInterface;
 use DropboxClient\Http\HttpClient;
 
-class DropboxClient
+class DropboxClient implements DropboxCLientInterface
 {
 
     const RPC_ENDPOINT = 'https://api.dropboxapi.com/2/';
@@ -34,7 +33,8 @@ class DropboxClient
     private $headers;
 
     /**
-     * DropboxClient constructor, contains
+     * DropboxClient constructor, if a DI container with auto wiring could be used in the current project the client initialization
+     * should be done to the HttpClientInterface not directly to the HttpClient
      * @param string $token
      */
     public function __construct(string $token)
@@ -43,29 +43,67 @@ class DropboxClient
         $this->client = new HttpClient();
     }
 
-    /**
-     *
+    /** Creates a folder
+     * https://www.dropbox.com/developers/documentation/http/documentation#files-create_folder
      * @param string $path The folder directory to create
+     * @param bool $autorename
      * @return array Contains the response body of the API call
      * @throws \Exception
      */
-    public function createFolder(string $path): array
+    public function createFolder(string $path, bool $autorename = false): array
     {
-
+        $this->uri = self::RPC_ENDPOINT . 'files/create_folder_v2';
+        $this->headers = $this->getHeaders($this->mapHeaders());
         $data = [
             'path' => $path,
-            'autorename' => false
+            'autorename' => $autorename
         ];
 
         return json_decode(
                         $this->client
-                        ->post(self::RPC_ENDPOINT . 'files/create_folder_v2', $data)
-                        ->withHeaders($this->getHeaders([
-                            'Content-Type: application/json']))
+                        ->post($this->uri, $data)
+                        ->withHeaders($this->headers)
                         ->execute()
                         ->getBody(),
               true);
         
+    }
+
+    /**
+     * Lists items in a folder, can be used with options as listed in the documentation
+     * https://www.dropbox.com/developers/documentation/http/documentation#files-list_folder
+     * @param string $path
+     * @param bool $recursive
+     * @param bool $includeMediaInfo
+     * @param bool $includeDeleted
+     * @param bool $includeHasExplicitSharedMembers
+     * @param bool $includeMountedFolders
+     * @param bool $includeNonDownloadableFiles
+     * @return array Contains the response body of the API call
+     * @throws \Exception
+     */
+    public function listFolder(string $path, bool $recursive = false,  bool $includeMediaInfo = false,bool $includeDeleted = false,
+                               bool $includeHasExplicitSharedMembers = false, bool $includeMountedFolders = true, bool $includeNonDownloadableFiles = true): array
+    {
+        $this->uri = self::RPC_ENDPOINT . 'files/list_folder';
+        $this->headers = $this->getHeaders($this->mapHeaders());
+        $data = [
+            'path' => $path,
+            'recursive' => $recursive,
+            'include_media_info' => $includeMediaInfo,
+            'include_deleted' => $includeDeleted,
+            'include_has_explicit_shared_members' => $includeHasExplicitSharedMembers,
+            'include_mounted_folders' => $includeMountedFolders,
+            'include_non_downloadable_files' => $includeNonDownloadableFiles
+        ];
+
+        return json_decode(
+                    $this->client
+                    ->post($this->uri, $data)
+                    ->withHeaders($this->headers)
+                    ->execute()
+                    ->getBody()
+        ,true);
     }
 
     /**
@@ -108,9 +146,9 @@ class DropboxClient
      * So a URI to Header mapping is required
      *
      * @param array $data Customized data for each header type usually converted to json, in this example it is a string but generally type array may be used
-     * @return
+     * @return array The actual headers after Header mapping
      */
-    private function mapHeaders(array $data): array
+    private function mapHeaders(array $data = []): array
     {
         return [
             'https://api.dropboxapi.com/2/files/create_folder_v2' =>
@@ -119,8 +157,12 @@ class DropboxClient
             ],
             'https://content.dropboxapi.com/2/files/download' =>
             [
-                'Dropbox-API-Arg: ' . json_encode(['path' => $data[0]]),
+                'Dropbox-API-Arg: ' . json_encode(['path' => empty($data) ? '' : $data[0]]),
                 'Content-Type: text/plain'
+            ],
+            'https://api.dropboxapi.com/2/files/list_folder' =>
+            [
+                'Content-Type: application/json'
             ]
         ][$this->uri];
     }

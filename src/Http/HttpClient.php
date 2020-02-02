@@ -4,23 +4,18 @@ declare(strict_types=1);
 
 namespace DropboxClient\Http;
 
-
+/**
+ * The custom HTTP Client
+ * This Client is not by any means complete, it just serves the basic functionality of the project
+ * Class HttpClient
+ * @package DropboxClient\Http
+ */
 class HttpClient implements HttpClientInterface
 {
     /**
      * @var resource cUrl Resource used as the request
      */
     private $handler;
-
-    /**
-     * @var array Headers for the request
-     */
-    private $headers;
-
-    /**
-     * @var array The curl options to be used
-     */
-    private $options;
 
     /**
      * @var string The headers of the Response
@@ -31,6 +26,7 @@ class HttpClient implements HttpClientInterface
      * @var string The body of the Response
      */
     private $responseBody;
+
     /**
      * HttpClient constructor.
      */
@@ -46,7 +42,7 @@ class HttpClient implements HttpClientInterface
     /**
      * GET method configuration
      * @param string $url The url to GET
-     * @return \DropboxClient\HttpClient An instance to allow chain calling of methods
+     * @return HttpClient An instance to allow chain calling of methods
      */
     public function get(string $url): HttpClient
     {
@@ -54,6 +50,12 @@ class HttpClient implements HttpClientInterface
         return $this;
     }
 
+    /**
+     * POST method configuration
+     * @param string $url The uri resource
+     * @param array $data Optional data in the post body
+     * @return HttpClient An instance to allow chain calling of methods
+     */
     public function post(string $url, array $data = []): HttpClient
     {
         curl_setopt($this->handler, CURLOPT_URL, $url);
@@ -64,13 +66,12 @@ class HttpClient implements HttpClientInterface
 
     /**
      * Executes the HttpClient Request after applying all custom options
-     * @return \DropboxClient\HttpClient An instance to allow chain calling of methods
+     * @return HttpClient An instance to allow chain calling of methods
      * @throws \Exception
      */
     public function execute(): HttpClient
     {
         $this->setDefaultOptions();
-        $this->setCustomOptions();
         $response = curl_exec($this->handler);
 
         if (curl_errno($this->handler)) {
@@ -81,19 +82,15 @@ class HttpClient implements HttpClientInterface
             throw new \Exception('Curl Error');
         }
 
-
         $headersLength = curl_getinfo($this->handler, CURLINFO_HEADER_SIZE);
         $this->responseHeaders = substr($response, 0, $headersLength);
-//        var_dump($this->responseHeaders);
-        echo 'test' .PHP_EOL;
         $this->responseBody = substr($response, $headersLength);
-//        var_dump($this->responseBody);
 
-        curl_close($this->handler);
         return $this;
     }
 
     /**
+     * Get Response Headers
      * @return string The Response Headers
      */
     public function getHeaders(): string
@@ -102,6 +99,7 @@ class HttpClient implements HttpClientInterface
     }
 
     /**
+     * Get Response Body
      * @return string The Response Body
      */
     public function getBody(): string
@@ -110,6 +108,9 @@ class HttpClient implements HttpClientInterface
     }
 
 
+    /**
+     * Sets the default Options for all requests
+     */
     private function setDefaultOptions(): void
     {
         curl_setopt($this->handler, CURLOPT_FOLLOWLOCATION, 1);
@@ -119,23 +120,26 @@ class HttpClient implements HttpClientInterface
     }
 
     /**
-     * @param array $options Set custom cURL Options
+     * Sets custom cURL Options - not used here provided for completeness
+     * @param array $options the custom Options
      * @return HttpClient
      */
     public function withOptions(array $options): HttpClient
     {
         curl_setopt_array($this->handler, $options);
+        return $this;
     }
 
+    /**
+     * Sets custom Headers to request
+     * @param array $headers The custom headers
+     * @return HttpClient
+     */
     public function withHeaders(array $headers = []): HttpClient
     {
         curl_setopt($this->handler, CURLOPT_HTTPHEADER, $headers);
         return $this;
     }
 
-    private function setCustomOptions()
-    {
-
-    }
 
 }

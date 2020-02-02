@@ -2,11 +2,10 @@
 A basic Dropbox Client in PHP
 
 ## Installation
-Via Composer
+Git clone this repository and use it.
+No need to install composer dependencies, they are just here for clarification.
+Not pushed on packagist.org
 
-```bash
-$ composer require nikosdevphp/dropboxclient
-```
 
 ## Documentation
 You can create a new HttpClient request in the following way
@@ -35,4 +34,5 @@ $client->listFolder('/Homework');
 ```
 
 Tested on actual created Dropbox Developer Account and worked
-as of 02/02/2020
+as of 02/02/2020.
+Contact me on niktriant89@gmail.com for your advise, comments etc.

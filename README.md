@@ -4,7 +4,7 @@ A basic Dropbox Client in PHP
 ## Installation
 Git clone this repository and use it.
 No need to install composer dependencies, they are just here for clarification.
-Not pushed on packagist.org
+Not pushed on packagist.org, can be done by easily by Github Hooks
 
 
 ## Documentation
